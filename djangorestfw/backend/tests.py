@@ -1,70 +1,76 @@
-from django.test import TestCase
-
-# Create your tests here.
-# backend/tests.py
+# backend/tests/test_views.py
+from rest_framework.test import APIClient, APITestCase
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.test import APITestCase
 from .models import CustomUser
-from django.contrib.auth.hashers import make_password
 
-class CustomUserViewSetTests(APITestCase):
+class CustomUserViewSetTestCase(APITestCase):
     def setUp(self):
-        self.admin_user = CustomUser.objects.create(
-            username='admin',
-            email='admin@example.com',
-            password=make_password('adminpassword'),
-            fname='Admin',
-            lname='User',
-            user_type='admin'
+        self.admin_user = CustomUser.objects.create_user(
+            username='admin', password='password', email='admin@example.com',
+            fname='Admin', lname='User', user_type='admin'
         )
+        self.coach_user = CustomUser.objects.create_user(
+            username='coach', password='password', email='coach@example.com',
+            fname='Coach', lname='User', user_type='coach'
+        )
+        self.player_user = CustomUser.objects.create_user(
+            username='player', password='password', email='player@example.com',
+            fname='Player', lname='User', user_type='player'
+        )
+        self.client = APIClient()
+    
+    def test_list_users_as_admin(self):
         self.client.force_authenticate(user=self.admin_user)
-        self.user = CustomUser.objects.create(
-            username='user1',
-            email='user1@example.com',
-            password=make_password('userpassword'),
-            fname='User',
-            lname='One',
-            user_type='player'
-        )
-
-    def test_update_user(self):
-        url = reverse('customuser-detail', args=[self.user.id])
-        data = {
-            'username': 'updateduser1',
-            'email': 'updateduser1@example.com',
-            'fname': 'Updated',
-            'lname': 'User',
-            'user_type': 'coach'
-        }
-        response = self.client.put(url, data, format='json')
-        self.user.refresh_from_db()
-
+        response = self.client.get(reverse('customuser-list'))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(self.user.username, data['username'])
-        self.assertEqual(self.user.email, data['email'])
-        self.assertEqual(self.user.fname, data['fname'])
-        self.assertEqual(self.user.lname, data['lname'])
-        self.assertEqual(self.user.user_type, data['user_type'])
-
-    def test_partial_update_user(self):
-        url = reverse('customuser-detail', args=[self.user.id])
-        data = {
-            'fname': 'Partially Updated'
-        }
-        response = self.client.patch(url, data, format='json')
-        self.user.refresh_from_db()
-
+    
+    def test_list_users_as_coach(self):
+        self.client.force_authenticate(user=self.coach_user)
+        response = self.client.get(reverse('customuser-list'))
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+    
+    def test_retrieve_user_as_admin(self):
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.get(reverse('customuser-detail', kwargs={'pk': self.player_user.pk}))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(self.user.fname, data['fname'])
-
-    def test_update_user_password(self):
-        url = reverse('customuser-detail', args=[self.user.id])
+    
+    def test_create_user_as_admin(self):
+        self.client.force_authenticate(user=self.admin_user)
         data = {
-            'password': 'newpassword123'
+            'username': 'newuser', 'password': 'password', 'email': 'newuser@example.com',
+            'fname': 'New', 'lname': 'User', 'user_type': 'player'
         }
-        response = self.client.put(url, data, format='json')
-        self.user.refresh_from_db()
-
+        response = self.client.post(reverse('customuser-list'), data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+    
+    def test_create_user_as_coach(self):
+        self.client.force_authenticate(user=self.coach_user)
+        data = {
+            'username': 'newuser', 'password': 'password', 'email': 'newuser@example.com',
+            'fname': 'New', 'lname': 'User', 'user_type': 'player'
+        }
+        response = self.client.post(reverse('customuser-list'), data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+    
+    def test_update_user_as_admin(self):
+        self.client.force_authenticate(user=self.admin_user)
+        data = {'fname': 'Updated'}
+        response = self.client.patch(reverse('customuser-detail', kwargs={'pk': self.player_user.pk}), data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertTrue(self.user.check_password(data['password']))
+    
+    def test_update_user_as_coach(self):
+        self.client.force_authenticate(user=self.coach_user)
+        data = {'fname': 'Updated'}
+        response = self.client.patch(reverse('customuser-detail', kwargs={'pk': self.player_user.pk}), data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+    
+    def test_delete_user_as_admin(self):
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.delete(reverse('customuser-detail', kwargs={'pk': self.player_user.pk}))
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+    
+    def test_delete_user_as_coach(self):
+        self.client.force_authenticate(user=self.coach_user)
+        response = self.client.delete(reverse('customuser-detail', kwargs={'pk': self.player_user.pk}))
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
