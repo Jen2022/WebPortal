@@ -3,6 +3,7 @@ from rest_framework.test import APIClient, APITestCase
 from django.urls import reverse
 from rest_framework import status
 from .models import CustomUser
+
 class CustomUserViewSetTestCase(APITestCase):
     def setUp(self):
         self.admin_user = CustomUser.objects.create_user(

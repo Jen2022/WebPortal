@@ -31,8 +31,6 @@ class TeamCategoryViewSet(viewsets.ModelViewSet):
     queryset = TeamCategory.objects.all()
     serializer_class = TeamCategorySerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
-     
-
 
 class SportViewSet(viewsets.ModelViewSet):
     queryset = Sport.objects.all()

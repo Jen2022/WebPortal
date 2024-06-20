@@ -7,16 +7,13 @@ from django.db import migrations
 def add_initial_sports(apps, schema_editor):
     Sport = apps.get_model('backend', 'Sport')
     sports = [
-        {'name': 'soccer'},
-        {'name': 'basketball'},
-        {'name': 'tennis'},
-        {'name': 'baseball'},
-        {'name': 'football'},
-        {'name': 'hockey'},
-        {'name': 'volleyball'},
-        {'name': 'cricket'},
+        {'name': 'gaelic football'},
+        {'name': 'hurling'},
+        {'name': 'camogie'},
         {'name': 'rugby'},
-        {'name': 'golf'},
+        {'name': 'soccer'},
+        {'name': 'hockey'},
+        {'name': 'basketball'},
     ]
     for sport in sports:
         Sport.objects.create(**sport)
@@ -24,7 +21,7 @@ def add_initial_sports(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('backend', '0003_sport'),  # Ensure this matches your initial migration
+        ('backend', '0001_initial'),  # Ensure this matches your initial migration
     ]
     operations = [
         migrations.RunPython(add_initial_sports),

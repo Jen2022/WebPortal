@@ -8,7 +8,6 @@ from .views import SportViewSet
 router = DefaultRouter()
 router.register(r'users', CustomUserViewSet)
 router.register(r'team-categories', TeamCategoryViewSet, basename='teamcategory')
-
 router.register(r'sports', SportViewSet, basename='sport')
 
 urlpatterns = [
