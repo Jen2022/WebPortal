@@ -1,6 +1,7 @@
 # backend/views.py
 from rest_framework import viewsets
 from .models import CustomUser
+from .models import Team
 from .serializers import CustomUserSerializer
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from .permissions import IsAdminUser, IsCoachUser, IsPlayerUser
@@ -10,6 +11,7 @@ from .serializers import TeamCategorySerializer
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from .models import Sport
 from .serializers import SportSerializer
+from .serializers import TeamSerializer
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.core.exceptions import ValidationError
@@ -53,3 +55,9 @@ class SportViewSet(viewsets.ModelViewSet):
             return Response({'error': e.message_dict}, status=400)
         except Exception as e:
             return Response({'error': str(e)}, status=400)
+        
+
+class TeamViewSet(viewsets.ModelViewSet):
+    queryset = Team.objects.all()
+    serializer_class = TeamSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]

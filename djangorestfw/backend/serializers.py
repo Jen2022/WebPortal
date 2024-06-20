@@ -3,7 +3,7 @@ from rest_framework import serializers
 from .models import CustomUser
 from .models import TeamCategory
 from .models import Sport
-
+from .models import Team
 
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -42,3 +42,11 @@ class SportSerializer(serializers.ModelSerializer):
         if Sport.objects.filter(name=normalized_name).exists():
             raise serializers.ValidationError("A sport with a similar name already exists.")
         return value
+
+class TeamSerializer(serializers.ModelSerializer):
+    coaches = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all(), many=True)
+
+    class Meta:
+        model = Team
+        fields = ['id', 'team_name', 'number_of_players', 'coaches', 'sport', 'team_category']
+        read_only_fields = ['id']

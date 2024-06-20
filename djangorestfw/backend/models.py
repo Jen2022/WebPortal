@@ -57,3 +57,12 @@ class Sport(models.Model):
         self.name = normalized_name
         super(Sport, self).save(*args, **kwargs)
 
+class Team(models.Model):
+    team_name = models.CharField(max_length=100)
+    player_id = models.CharField(max_length=255)  # Assuming a comma-separated string of player IDs
+    coach_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='coached_teams')
+    sport_id = models.ForeignKey(Sport, on_delete=models.CASCADE)
+    team_category_id = models.ForeignKey(TeamCategory, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.team_name
