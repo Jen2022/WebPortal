@@ -4,12 +4,20 @@ from .models import CustomUser
 from .models import TeamCategory
 from .models import Sport
 from .models import Team
+from django.contrib.auth.hashers import make_password
 
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ['id', 'username', 'email', 'password', 'fname', 'lname', 'user_type']
-
+        extra_kwargs = {
+            'password': {'write_only': True}  # Ensure the password is write-only
+        }
+    def create(self, validated_data):
+        # Hash the password before saving the user
+        validated_data['password'] = make_password(validated_data['password'])
+        return super().create(validated_data)
+    
     def update(self, instance, validated_data):
         # Update the password if provided
         password = validated_data.pop('password', None)
@@ -44,9 +52,16 @@ class SportSerializer(serializers.ModelSerializer):
         return value
 
 class TeamSerializer(serializers.ModelSerializer):
-    coaches = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all(), many=True)
+    players = CustomUserSerializer(many=True)
+    coaches = CustomUserSerializer(many=True)
+    sport = SportSerializer()
+    team_category = TeamCategorySerializer()
+    number_of_players = serializers.SerializerMethodField()
 
     class Meta:
         model = Team
-        fields = ['id', 'team_name', 'number_of_players', 'coaches', 'sport', 'team_category']
+        fields = ['id', 'team_name', 'number_of_players', 'players', 'coaches', 'sport', 'team_category']
         read_only_fields = ['id']
+
+    def get_number_of_players(self, obj):
+        return obj.players.count()

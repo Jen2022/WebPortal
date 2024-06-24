@@ -12,8 +12,8 @@ class CustomUser(AbstractUser):
     )
 
     user_type = models.CharField(max_length=10, choices=USER_TYPE_CHOICES)
-    email = models.EmailField(unique=True)  # Ensure email is unique
-    password = models.CharField(max_length=128)  # Adjust length as per your hash algorithm
+    email = models.EmailField(unique=True)  
+    password = models.CharField(max_length=128)  
     fname = models.CharField(max_length=30)
     lname = models.CharField(max_length=30)
 
@@ -59,10 +59,10 @@ class Sport(models.Model):
 
 class Team(models.Model):
     team_name = models.CharField(max_length=100)
-    player_id = models.CharField(max_length=255)  # Assuming a comma-separated string of player IDs
-    coach_id = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='coached_teams')
-    sport_id = models.ForeignKey(Sport, on_delete=models.CASCADE)
-    team_category_id = models.ForeignKey(TeamCategory, on_delete=models.CASCADE)
+    players = models.ManyToManyField(CustomUser, related_name='teams_as_player', limit_choices_to={'user_type': 'player'})
+    coaches = models.ManyToManyField(CustomUser, related_name='teams_as_coach', limit_choices_to={'user_type': 'coach'})
+    sport = models.ForeignKey(Sport, on_delete=models.CASCADE)
+    team_category = models.ForeignKey(TeamCategory, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.team_name
