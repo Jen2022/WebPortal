@@ -50,6 +50,7 @@ class SportSerializer(serializers.ModelSerializer):
         if Sport.objects.filter(name=normalized_name).exists():
             raise serializers.ValidationError("A sport with a similar name already exists.")
         return value
+    
 class TeamSerializer(serializers.ModelSerializer):
     coaches = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.filter(user_type='coach'), many=True)
     players = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.filter(user_type='player'), many=True)

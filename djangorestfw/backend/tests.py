@@ -5,6 +5,7 @@ from rest_framework import status
 from .models import CustomUser
 from .models import TeamCategory
 from .models import Sport
+from .models import Team
 
 class CustomUserViewSetTestCase(APITestCase):
     def setUp(self):
@@ -234,4 +235,86 @@ class SportViewSetTestCase(APITestCase):
         self.assertEqual(response.data['name'][0].code, 'invalid')
         self.assertEqual(str(response.data['name'][0]), 'A sport with a similar name already exists.')
 
+class TeamViewSetTestCase(APITestCase):
+    def setUp(self):
+        self.admin_user = CustomUser.objects.create_user(
+            username='admin', password='password', email='admin@example.com',
+            fname='Admin', lname='User', user_type='admin'
+        )
+        # Create sample users
+        self.coach1 = CustomUser.objects.create_user(username='coach1', password='password', email='coach1@example.com', fname='Coach', lname='One', user_type='coach')
+        self.coach2 = CustomUser.objects.create_user(username='coach2', password='password', email='coach2@example.com', fname='Coach', lname='Two', user_type='coach')
+        self.player1 = CustomUser.objects.create_user(username='player1', password='password', email='player1@example.com', fname='Player', lname='One', user_type='player')
+        self.player2 = CustomUser.objects.create_user(username='player2', password='password', email='player2@example.com', fname='Player', lname='Two', user_type='player')
+
+        # Create sample sport
+        self.sport = Sport.objects.create(name='badminton')
+
+        # Create sample team category
+        self.team_category = TeamCategory.objects.create(name='Under 14')
+
+        # Create client
+        self.client = self.client_class()
+
+    def test_create_team(self):
+        self.client.force_authenticate(user=self.admin_user)
+        url = reverse('team-list')
+        data = {
+            "team_name": "Team A",
+            "coaches": [self.coach1.id, self.coach2.id],  # Usernames of existing coaches
+            "sport": "badminton",
+            "team_category": "Under 14",
+            "players": [self.player1.id, self.player2.id]  # Usernames of existing players
+        }
+        response = self.client.post(url, data, format='json')
+        if response.status_code != status.HTTP_201_CREATED:
+            print(response.data)  # Print the response data for debugging
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Team.objects.count(), 1)
+        self.assertEqual(Team.objects.get().team_name, 'Team A')
+
+    def test_retrieve_team(self):
+        self.client.force_authenticate(user=self.admin_user)
+        team = Team.objects.create(team_name='Team B', sport=self.sport, team_category=self.team_category)
+        team.coaches.set([self.coach1, self.coach2])
+        team.players.set([self.player1, self.player2])
+
+        url = reverse('team-detail', args=[team.id])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['team_name'], 'Team B')
+        self.assertEqual(response.data['number_of_players'], 2)
+        self.assertListEqual(response.data['coaches'], [self.coach1.id, self.coach2.id])
+        self.assertListEqual(response.data['players'], [self.player1.id, self.player2.id])
+
+    def test_update_team(self):
+        self.client.force_authenticate(user=self.admin_user)
+        team = Team.objects.create(team_name='Team C', sport=self.sport, team_category=self.team_category)
+        team.coaches.set([self.coach1])
+        team.players.set([self.player1])
+
+        url = reverse('team-detail', args=[team.id])
+        data = {
+            "team_name": "Team C Updated",
+            "coaches": [self.coach2.id],  # Updating coaches
+            "sport": "badminton",
+            "team_category": "Under 14",
+            "players": [self.player2.id]  # Updating players
+        }
+        response = self.client.put(url, data, format='json')
+        if response.status_code != status.HTTP_200_OK:
+            print(response.data)  # Print the response data for debugging
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        team.refresh_from_db()
+        self.assertEqual(team.team_name, 'Team C Updated')
+        self.assertListEqual(list(team.coaches.values_list('username', flat=True)), ['coach2'])
+        self.assertListEqual(list(team.players.values_list('username', flat=True)), ['player2'])
+
+    def test_delete_team(self):
+        self.client.force_authenticate(user=self.admin_user)
+        team = Team.objects.create(team_name='Team D', sport=self.sport, team_category=self.team_category)
+        url = reverse('team-detail', args=[team.id])
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(Team.objects.count(), 0)
 
