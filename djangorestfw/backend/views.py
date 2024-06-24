@@ -1,20 +1,26 @@
 # backend/views.py
 from rest_framework import viewsets
-from .models import CustomUser
-from .models import Team
-from .serializers import CustomUserSerializer
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from .permissions import IsAdminUser, IsCoachUser, IsPlayerUser
+from .permissions import IsAdminUser
 from rest_framework import viewsets
-from .models import TeamCategory
-from .serializers import TeamCategorySerializer
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
-from .models import Sport
-from .serializers import SportSerializer
-from .serializers import TeamSerializer
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.core.exceptions import ValidationError
+
+from .models import CustomUser
+from .models import ParentPlayer
+from .models import Team
+from .models import TeamCategory
+from .models import Sport
+
+from .serializers import CustomUserSerializer
+from .serializers import SportSerializer
+from .serializers import ParentPlayerSerializer
+from .serializers import TeamSerializer
+from .serializers import TeamCategorySerializer
+
+
 
 class CustomUserViewSet(viewsets.ModelViewSet):
     queryset = CustomUser.objects.all()
@@ -29,6 +35,10 @@ class CustomUserViewSet(viewsets.ModelViewSet):
             permission_classes = [IsAuthenticated]
         return [permission() for permission in permission_classes]  
     
+class ParentPlayerViewSet(viewsets.ModelViewSet):
+    queryset = ParentPlayer.objects.all()
+    serializer_class = ParentPlayerSerializer
+
 class TeamCategoryViewSet(viewsets.ModelViewSet):
     queryset = TeamCategory.objects.all()
     serializer_class = TeamCategorySerializer

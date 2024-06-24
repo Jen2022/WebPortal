@@ -9,6 +9,7 @@ class CustomUser(AbstractUser):
         ('admin', 'Admin'),
         ('coach', 'Coach'),
         ('player', 'Player'),
+        ('parent', 'Parent'),
     )
 
     user_type = models.CharField(max_length=10, choices=USER_TYPE_CHOICES)
@@ -17,11 +18,21 @@ class CustomUser(AbstractUser):
     fname = models.CharField(max_length=30)
     lname = models.CharField(max_length=30)
 
-    REQUIRED_FIELDS = ['email','password', 'fname', 'lname', 'user_type']
+    REQUIRED_FIELDS = ['email', 'password', 'fname', 'lname', 'user_type']
 
     def __str__(self):
         return f"{self.fname} {self.lname} ({self.user_type})"
+    
+class ParentPlayer(models.Model):
+    parent = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='children', limit_choices_to={'user_type': 'parent'})
+    player = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='parents', limit_choices_to={'user_type': 'player'})
 
+    class Meta:
+        unique_together = ('parent', 'player')
+
+    def __str__(self):
+        return f"{self.parent.fname} {self.parent.lname} - {self.player.fname} {self.player.lname}"
+    
 class TeamCategory(models.Model):
     name = models.CharField(max_length=100, unique=True)
 

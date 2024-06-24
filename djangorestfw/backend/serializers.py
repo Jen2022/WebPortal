@@ -1,6 +1,7 @@
 # users/serializers.py
 from rest_framework import serializers
 from .models import CustomUser
+from .models import ParentPlayer
 from .models import TeamCategory
 from .models import Sport
 from .models import Team
@@ -25,6 +26,15 @@ class CustomUserSerializer(serializers.ModelSerializer):
             instance.set_password(password)
         instance.save()
         return instance
+
+class ParentPlayerSerializer(serializers.ModelSerializer):
+    parent = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.filter(user_type='parent'))
+    player = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.filter(user_type='player'))
+
+    class Meta:
+        model = ParentPlayer
+        fields = ['id', 'parent', 'player']
+
     
 
 class TeamCategorySerializer(serializers.ModelSerializer):
