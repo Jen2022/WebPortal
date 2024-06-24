@@ -50,18 +50,22 @@ class SportSerializer(serializers.ModelSerializer):
         if Sport.objects.filter(name=normalized_name).exists():
             raise serializers.ValidationError("A sport with a similar name already exists.")
         return value
-    
 class TeamSerializer(serializers.ModelSerializer):
     coaches = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.filter(user_type='coach'), many=True)
     players = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.filter(user_type='player'), many=True)
     sport = serializers.SlugRelatedField(slug_field='name', queryset=Sport.objects.all())
     team_category = serializers.CharField(source='team_category.name')
     number_of_players = serializers.SerializerMethodField()
+    coaches_details = CustomUserSerializer(source='coaches', many=True, read_only=True)
+    players_details = CustomUserSerializer(source='players', many=True, read_only=True)
 
     class Meta:
         model = Team
-        fields = ['id', 'team_name', 'number_of_players', 'coaches', 'sport', 'team_category', 'players']
-        read_only_fields = ['id', 'number_of_players']
+        fields = [
+            'id', 'team_name', 'number_of_players', 'coaches', 'coaches_details',
+            'sport', 'team_category', 'players', 'players_details'
+        ]
+        read_only_fields = ['id', 'number_of_players', 'coaches_details', 'players_details']
 
     def get_number_of_players(self, obj):
         return obj.players.count()

@@ -233,3 +233,5 @@ class SportViewSetTestCase(APITestCase):
         self.assertIn('name', response.data)
         self.assertEqual(response.data['name'][0].code, 'invalid')
         self.assertEqual(str(response.data['name'][0]), 'A sport with a similar name already exists.')
+
+
