@@ -50,18 +50,50 @@ class SportSerializer(serializers.ModelSerializer):
         if Sport.objects.filter(name=normalized_name).exists():
             raise serializers.ValidationError("A sport with a similar name already exists.")
         return value
-
+    
 class TeamSerializer(serializers.ModelSerializer):
-    players = CustomUserSerializer(many=True)
-    coaches = CustomUserSerializer(many=True)
-    sport = SportSerializer()
-    team_category = TeamCategorySerializer()
+    coaches = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.filter(user_type='coach'), many=True)
+    players = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.filter(user_type='player'), many=True)
+    sport = serializers.SlugRelatedField(slug_field='name', queryset=Sport.objects.all())
+    team_category = serializers.CharField(source='team_category.name')
     number_of_players = serializers.SerializerMethodField()
 
     class Meta:
         model = Team
-        fields = ['id', 'team_name', 'number_of_players', 'players', 'coaches', 'sport', 'team_category']
-        read_only_fields = ['id']
+        fields = ['id', 'team_name', 'number_of_players', 'coaches', 'sport', 'team_category', 'players']
+        read_only_fields = ['id', 'number_of_players']
 
     def get_number_of_players(self, obj):
         return obj.players.count()
+
+    def create(self, validated_data):
+        coaches = validated_data.pop('coaches')
+        players = validated_data.pop('players', [])
+        team_category_name = validated_data.pop('team_category')['name']
+        team_category, created = TeamCategory.objects.get_or_create(
+            name=TeamCategory().normalize_name(team_category_name)
+        )
+        sport = validated_data.pop('sport')
+        team = Team.objects.create(team_category=team_category, sport=sport, **validated_data)
+        team.coaches.set(coaches)
+        team.players.set(players)
+        return team
+
+    def update(self, instance, validated_data):
+        coaches = validated_data.pop('coaches', None)
+        players = validated_data.pop('players', None)
+        team_category_name = validated_data.pop('team_category', {}).get('name', None)
+        if team_category_name:
+            team_category, created = TeamCategory.objects.get_or_create(
+                name=TeamCategory().normalize_name(team_category_name)
+            )
+            instance.team_category = team_category
+
+        instance.team_name = validated_data.get('team_name', instance.team_name)
+        instance.sport = validated_data.get('sport', instance.sport)
+        instance.save()
+        if coaches is not None:
+            instance.coaches.set(coaches)
+        if players is not None:
+            instance.players.set(players)
+        return instance
