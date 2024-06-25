@@ -4,6 +4,12 @@ import re
 from django.core.exceptions import ValidationError
 from django.db import models
 
+class Workspace(models.Model):
+    name = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return self.name
+    
 class CustomUser(AbstractUser):
     USER_TYPE_CHOICES = (
         ('admin', 'Admin'),
@@ -17,8 +23,9 @@ class CustomUser(AbstractUser):
     password = models.CharField(max_length=128)  
     fname = models.CharField(max_length=30)
     lname = models.CharField(max_length=30)
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name='users')
 
-    REQUIRED_FIELDS = ['email', 'password', 'fname', 'lname', 'user_type']
+    REQUIRED_FIELDS = ['email', 'password', 'fname', 'lname', 'user_type','workspace']
 
     def __str__(self):
         return f"{self.fname} {self.lname} ({self.user_type})"
@@ -26,6 +33,7 @@ class CustomUser(AbstractUser):
 class ParentPlayer(models.Model):
     parent = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='children', limit_choices_to={'user_type': 'parent'})
     player = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='parents', limit_choices_to={'user_type': 'player'})
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name='parent_player_relationships')
 
     class Meta:
         unique_together = ('parent', 'player')
@@ -35,6 +43,7 @@ class ParentPlayer(models.Model):
     
 class TeamCategory(models.Model):
     name = models.CharField(max_length=100, unique=True)
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name='team_categories')
 
     def __str__(self):
         return self.name
@@ -53,6 +62,7 @@ class TeamCategory(models.Model):
 
 class Sport(models.Model):
     name = models.CharField(max_length=100, unique=True)
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name='sports')
 
     def __str__(self):
         return self.name
@@ -74,6 +84,7 @@ class Team(models.Model):
     coaches = models.ManyToManyField(CustomUser, related_name='teams_as_coach', limit_choices_to={'user_type': 'coach'})
     sport = models.ForeignKey(Sport, on_delete=models.CASCADE)
     team_category = models.ForeignKey(TeamCategory, on_delete=models.CASCADE)
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name='teams')
 
     def __str__(self):
         return self.team_name

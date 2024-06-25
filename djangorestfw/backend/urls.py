@@ -5,8 +5,10 @@ from .views import CustomUserViewSet
 from .views import TeamCategoryViewSet
 from .views import SportViewSet
 from .views import TeamViewSet
+from .views import WorkspaceViewSet
 
 router = DefaultRouter()
+router.register(r'workspaces', WorkspaceViewSet)
 router.register(r'teams', TeamViewSet)
 router.register(r'users', CustomUserViewSet)
 router.register(r'team-categories', TeamCategoryViewSet, basename='teamcategory')

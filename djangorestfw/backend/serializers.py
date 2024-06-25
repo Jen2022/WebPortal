@@ -5,27 +5,40 @@ from .models import ParentPlayer
 from .models import TeamCategory
 from .models import Sport
 from .models import Team
+from .models import Workspace
 from django.contrib.auth.hashers import make_password
 
+class WorkspaceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Workspace
+        fields = ['id', 'name']
+
 class CustomUserSerializer(serializers.ModelSerializer):
+
+    workspace = WorkspaceSerializer()
     class Meta:
         model = CustomUser
-        fields = ['id', 'username', 'email', 'password', 'fname', 'lname', 'user_type']
+        fields = ['id', 'username', 'email', 'password', 'fname', 'lname', 'user_type','workspace']
         extra_kwargs = {
             'password': {'write_only': True}  # Ensure the password is write-only
         }
     def create(self, validated_data):
         # Hash the password before saving the user
+        workspace_data = validated_data.pop('workspace')
+        workspace, created = Workspace.objects.get_or_create(**workspace_data)
+        validated_data['workspace'] = workspace
         validated_data['password'] = make_password(validated_data['password'])
         return super().create(validated_data)
     
     def update(self, instance, validated_data):
-        # Update the password if provided
+        workspace_data = validated_data.pop('workspace', None)
+        if workspace_data:
+            workspace, created = Workspace.objects.get_or_create(**workspace_data)
+            instance.workspace = workspace
         password = validated_data.pop('password', None)
         if password:
             instance.set_password(password)
-        instance.save()
-        return instance
+        return super().update(instance, validated_data)
 
 class ParentPlayerSerializer(serializers.ModelSerializer):
     parent = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.filter(user_type='parent'))
@@ -40,7 +53,7 @@ class ParentPlayerSerializer(serializers.ModelSerializer):
 class TeamCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = TeamCategory
-        fields = ['id', 'name']
+        fields = ['id', 'name','workspace']
 
     def validate_name(self, value):
         # Normalize the name for validation
@@ -52,7 +65,7 @@ class TeamCategorySerializer(serializers.ModelSerializer):
 class SportSerializer(serializers.ModelSerializer):
     class Meta:
         model = Sport
-        fields = ['id', 'name']
+        fields = ['id', 'name','workspace']
 
     def validate_name(self, value):
         # Normalize the name for validation
@@ -85,8 +98,9 @@ class TeamSerializer(serializers.ModelSerializer):
         coaches = validated_data.pop('coaches')
         players = validated_data.pop('players', [])
         team_category_name = validated_data.pop('team_category')['name']
-        team_category, created = TeamCategory.objects.get_or_create(
-            name=TeamCategory().normalize_name(team_category_name)
+        team_category, created =TeamCategory.objects.get_or_create(
+            name=TeamCategory().normalize_name(team_category_name),
+            workspace=validated_data['workspace']
         )
         sport = validated_data.pop('sport')
         team = Team.objects.create(team_category=team_category, sport=sport, **validated_data)
@@ -99,8 +113,9 @@ class TeamSerializer(serializers.ModelSerializer):
         players = validated_data.pop('players', None)
         team_category_name = validated_data.pop('team_category', {}).get('name', None)
         if team_category_name:
-            team_category, created = TeamCategory.objects.get_or_create(
-                name=TeamCategory().normalize_name(team_category_name)
+            team_category, created =TeamCategory.objects.get_or_create(
+                name=TeamCategory().normalize_name(team_category_name),
+                workspace=instance.workspace
             )
             instance.team_category = team_category
 

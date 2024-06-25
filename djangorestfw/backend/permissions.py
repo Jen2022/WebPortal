@@ -12,3 +12,7 @@ class IsCoachUser(BasePermission):
 class IsPlayerUser(BasePermission):
     def has_permission(self, request, view):
         return request.user and request.user.user_type == 'player'
+    
+class IsInWorkspace(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return obj.workspace == request.user.workspace

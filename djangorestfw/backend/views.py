@@ -13,13 +13,16 @@ from .models import ParentPlayer
 from .models import Team
 from .models import TeamCategory
 from .models import Sport
+from .models import Workspace
 
 from .serializers import CustomUserSerializer
 from .serializers import SportSerializer
 from .serializers import ParentPlayerSerializer
 from .serializers import TeamSerializer
 from .serializers import TeamCategorySerializer
+from .serializers import WorkspaceSerializer
 
+from .permissions import IsInWorkspace
 
 
 class CustomUserViewSet(viewsets.ModelViewSet):
@@ -28,26 +31,32 @@ class CustomUserViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:  # Only allow admin to list and retrieve users
-            permission_classes = [IsAuthenticated, IsAdminUser]
+            permission_classes = [IsAuthenticated, IsAdminUser, IsInWorkspace]
         elif self.action in ['create', 'update', 'partial_update', 'destroy']:
-            permission_classes = [IsAuthenticated, IsAdminUser]  # Only admin can create, update, and delete users
+            permission_classes = [IsAuthenticated, IsAdminUser, IsInWorkspace]  # Only admin can create, update, and delete users
         else:
-            permission_classes = [IsAuthenticated]
+            permission_classes = [IsAuthenticated, IsInWorkspace]
         return [permission() for permission in permission_classes]  
     
 class ParentPlayerViewSet(viewsets.ModelViewSet):
     queryset = ParentPlayer.objects.all()
     serializer_class = ParentPlayerSerializer
+    permission_classes = [IsInWorkspace]
 
+    def get_queryset(self):
+        return ParentPlayer.objects.filter(workspace=self.request.user.workspace)
+    
 class TeamCategoryViewSet(viewsets.ModelViewSet):
     queryset = TeamCategory.objects.all()
     serializer_class = TeamCategorySerializer
-    permission_classes = [IsAuthenticated]
-
+    permission_classes = [IsAuthenticated, IsInWorkspace]
+    def get_queryset(self):
+        return TeamCategory.objects.filter(workspace=self.request.user.workspace)
+    
 class SportViewSet(viewsets.ModelViewSet):
     queryset = Sport.objects.all()
     serializer_class = SportSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticatedOrReadOnly, IsInWorkspace]
 
     @action(detail=False, methods=['post'], permission_classes=[IsAuthenticatedOrReadOnly])
     def add_other(self, request):
@@ -71,3 +80,15 @@ class TeamViewSet(viewsets.ModelViewSet):
     queryset = Team.objects.all()
     serializer_class = TeamSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
+    def get_queryset(self):
+        return Team.objects.filter(workspace=self.request.user.workspace)
+
+class WorkspaceViewSet(viewsets.ModelViewSet):
+    queryset = Workspace.objects.all()
+    serializer_class = WorkspaceSerializer
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def get_queryset(self):
+        if self.request.user.is_superuser:
+            return Workspace.objects.all()
+        return Workspace.objects.filter(users=self.request.user)
