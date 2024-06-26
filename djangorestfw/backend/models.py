@@ -12,7 +12,7 @@ class Workspace(models.Model):
     
 class CustomUser(AbstractUser):
     USER_TYPE_CHOICES = (
-        ('admin', 'Admin'),
+        ('admin', 'Admin'), #SCHOOL ADMIN    
         ('coach', 'Coach'),
         ('player', 'Player'),
         ('parent', 'Parent'),
@@ -23,9 +23,9 @@ class CustomUser(AbstractUser):
     password = models.CharField(max_length=128)  
     fname = models.CharField(max_length=30)
     lname = models.CharField(max_length=30)
-    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name='users')
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name='users',null=True,blank=True)
 
-    REQUIRED_FIELDS = ['email', 'password', 'fname', 'lname', 'user_type','workspace']
+    REQUIRED_FIELDS = ['email', 'password', 'fname', 'lname', 'user_type']
 
     def __str__(self):
         return f"{self.fname} {self.lname} ({self.user_type})"

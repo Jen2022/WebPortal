@@ -4,7 +4,7 @@ from django.db import migrations, models
 def set_default_workspace(apps, schema_editor):
     CustomUser = apps.get_model('backend', 'CustomUser')
     Workspace = apps.get_model('backend', 'Workspace')
-    default_workspace = Workspace.objects.get(name='Default Workspace')
+    default_workspace = Workspace.objects.get_or_create(name='Default Workspace')
 
     for user in CustomUser.objects.filter(workspace__isnull=True):
         user.workspace = default_workspace
