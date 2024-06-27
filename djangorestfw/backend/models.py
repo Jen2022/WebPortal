@@ -62,12 +62,11 @@ class TeamCategory(models.Model):
 
 class Sport(models.Model):
     name = models.CharField(max_length=100)
-    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name='sports')
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name='sports', null=True, blank=True)
     global_sport = models.BooleanField(default=False)
 
-
     class Meta:
-        unique_together = ('name', 'workspace', 'global_sport')     
+        unique_together = ('name', 'workspace')  # Add a unique constraint on name and workspace
 
     def __str__(self):
         return self.name
@@ -78,12 +77,9 @@ class Sport(models.Model):
 
     def save(self, *args, **kwargs):
         normalized_name = self.normalize_name(self.name)
-        if self.global_sport:
-            if Sport.objects.exclude(id=self.id).filter(name=self.name, global_sport=True).exists():
-                raise ValidationError(f"A sport with the name '{self.name}' already exists.")
-        else:
-            if Sport.objects.exclude(id=self.id).filter(name=self.name, workspace=self.workspace, global_sport=False).exists():
-                raise ValidationError(f"A sport with the name '{self.name}' already exists in this workspace.")
+        if not self.global_sport and Sport.objects.exclude(id=self.id).filter(name=normalized_name, workspace=self.workspace).exists():
+            raise ValidationError(f"A sport with a similar name '{self.name}' already exists in this workspace.")
+        self.name = normalized_name
         super(Sport, self).save(*args, **kwargs)
 
 class Team(models.Model):
