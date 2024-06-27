@@ -48,8 +48,6 @@ class ParentPlayerSerializer(serializers.ModelSerializer):
         model = ParentPlayer
         fields = ['id', 'parent', 'player']
 
-    
-
 class TeamCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = TeamCategory
@@ -82,12 +80,13 @@ class TeamSerializer(serializers.ModelSerializer):
     number_of_players = serializers.SerializerMethodField()
     coaches_details = CustomUserSerializer(source='coaches', many=True, read_only=True)
     players_details = CustomUserSerializer(source='players', many=True, read_only=True)
+    workspace = serializers.PrimaryKeyRelatedField(queryset=Workspace.objects.all())
 
     class Meta:
         model = Team
         fields = [
             'id', 'team_name', 'number_of_players', 'coaches', 'coaches_details',
-            'sport', 'team_category', 'players', 'players_details'
+            'sport', 'team_category', 'players', 'players_details','workspace'
         ]
         read_only_fields = ['id', 'number_of_players', 'coaches_details', 'players_details']
 
