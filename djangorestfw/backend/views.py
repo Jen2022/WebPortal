@@ -38,6 +38,9 @@ class CustomUserViewSet(viewsets.ModelViewSet):
             permission_classes = [IsAuthenticated, IsInWorkspace]
         return [permission() for permission in permission_classes]  
     
+    def get_queryset(self):
+        return CustomUser.objects.filter(workspace=self.request.user.workspace)
+    
 class ParentPlayerViewSet(viewsets.ModelViewSet):
     queryset = ParentPlayer.objects.all()
     serializer_class = ParentPlayerSerializer
@@ -54,28 +57,22 @@ class TeamCategoryViewSet(viewsets.ModelViewSet):
         return TeamCategory.objects.filter(workspace=self.request.user.workspace)
     
 class SportViewSet(viewsets.ModelViewSet):
-    queryset = Sport.objects.all()
     serializer_class = SportSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsInWorkspace]
 
-    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticatedOrReadOnly])
-    def add_other(self, request):
-        name = request.data.get('name')
-        if not name:
-            return Response({'error': 'Name is required'}, status=400)
-        
-        try:
-            sport, created = Sport.objects.get_or_create(name=name)
-            if created:
-                return Response(SportSerializer(sport).data, status=201)
-            else:
-                return Response({'error': 'Sport already exists'}, status=400)
-        except ValidationError as e:
-            return Response({'error': e.message_dict}, status=400)
-        except Exception as e:
-            return Response({'error': str(e)}, status=400)
-        
+    def get_queryset(self):
+        global_sports = Sport.objects.filter(global_sport=True)
+        workspace_sports = Sport.objects.filter(workspace=self.request.user.workspace, global_sport=False)
+        return global_sports.union(workspace_sports)
 
+    def create(self, request, *args, **kwargs):
+        if 'global_sport' not in request.data:
+            request.data['global_sport'] = False
+        if not request.data['global_sport']:
+            if 'workspace' not in request.data:
+                request.data['workspace'] = self.request.user.workspace.id
+        return super().create(request, *args, **kwargs)
+    
 class TeamViewSet(viewsets.ModelViewSet):
     queryset = Team.objects.all()
     serializer_class = TeamSerializer

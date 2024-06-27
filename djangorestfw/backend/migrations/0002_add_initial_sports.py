@@ -12,7 +12,7 @@ def add_initial_sports(apps, schema_editor):
         {'name': 'basketball'},
     ]
     for sport in sports:
-        Sport.objects.create(**sport)
+        Sport.objects.create(name=sport, global_sport=True)
     
 
 class Migration(migrations.Migration):

@@ -17,7 +17,7 @@ class CustomUser(AbstractUser):
         ('player', 'Player'),
         ('parent', 'Parent'),
     )
-
+    username = models.CharField(max_length=128,unique=True)  
     user_type = models.CharField(max_length=10, choices=USER_TYPE_CHOICES)
     email = models.EmailField(unique=True)  
     password = models.CharField(max_length=128)  
@@ -61,8 +61,13 @@ class TeamCategory(models.Model):
         super(TeamCategory, self).save(*args, **kwargs)
 
 class Sport(models.Model):
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
     workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name='sports')
+    global_sport = models.BooleanField(default=False)
+
+
+    class Meta:
+        unique_together = ('name', 'workspace', 'global_sport')     
 
     def __str__(self):
         return self.name
@@ -73,9 +78,12 @@ class Sport(models.Model):
 
     def save(self, *args, **kwargs):
         normalized_name = self.normalize_name(self.name)
-        if Sport.objects.exclude(id=self.id).filter(name=normalized_name).exists():
-            raise ValidationError(f"A sport with a similar name '{self.name}' already exists.")
-        self.name = normalized_name
+        if self.global_sport:
+            if Sport.objects.exclude(id=self.id).filter(name=self.name, global_sport=True).exists():
+                raise ValidationError(f"A sport with the name '{self.name}' already exists.")
+        else:
+            if Sport.objects.exclude(id=self.id).filter(name=self.name, workspace=self.workspace, global_sport=False).exists():
+                raise ValidationError(f"A sport with the name '{self.name}' already exists in this workspace.")
         super(Sport, self).save(*args, **kwargs)
 
 class Team(models.Model):

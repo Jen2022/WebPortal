@@ -14,27 +14,27 @@ class WorkspaceSerializer(serializers.ModelSerializer):
         fields = ['id', 'name']
 
 class CustomUserSerializer(serializers.ModelSerializer):
-
-    workspace = WorkspaceSerializer()
+    workspace = serializers.PrimaryKeyRelatedField(queryset=Workspace.objects.all())
     class Meta:
         model = CustomUser
         fields = ['id', 'username', 'email', 'password', 'fname', 'lname', 'user_type','workspace']
         extra_kwargs = {
             'password': {'write_only': True}  # Ensure the password is write-only
         }
+
     def create(self, validated_data):
         # Hash the password before saving the user
-        workspace_data = validated_data.pop('workspace')
-        workspace, created = Workspace.objects.get_or_create(**workspace_data)
-        validated_data['workspace'] = workspace
+        # workspace_data = validated_data.pop('workspace')
+        # workspace, created = Workspace.objects.get_or_create(**workspace_data)
+        # validated_data['workspace'] = workspace
         validated_data['password'] = make_password(validated_data['password'])
         return super().create(validated_data)
     
     def update(self, instance, validated_data):
-        workspace_data = validated_data.pop('workspace', None)
-        if workspace_data:
-            workspace, created = Workspace.objects.get_or_create(**workspace_data)
-            instance.workspace = workspace
+        # workspace_data = validated_data.pop('workspace', None)
+        # if workspace_data:
+        #     workspace, created = Workspace.objects.get_or_create(**workspace_data)
+        #     instance.workspace = workspace
         password = validated_data.pop('password', None)
         if password:
             instance.set_password(password)
@@ -61,16 +61,31 @@ class TeamCategorySerializer(serializers.ModelSerializer):
         return value
 
 class SportSerializer(serializers.ModelSerializer):
+    workspace = serializers.PrimaryKeyRelatedField(queryset=Workspace.objects.all(), required=False, allow_null=True)
+
     class Meta:
         model = Sport
-        fields = ['id', 'name','workspace']
+        fields = ['id', 'name', 'workspace', 'global_sport']
 
-    def validate_name(self, value):
-        # Normalize the name for validation
-        normalized_name = Sport().normalize_name(value)
-        if Sport.objects.filter(name=normalized_name).exists():
-            raise serializers.ValidationError("A sport with a similar name already exists.")
-        return value
+    def validate(self, data):
+        normalized_name = Sport().normalize_name(data['name'])
+        workspace = data.get('workspace', None)
+        global_sport = data.get('global_sport', False)
+
+        if global_sport:
+            if Sport.objects.filter(name=normalized_name, global_sport=True).exists():
+                raise serializers.ValidationError("A sport with this name already exists.")
+        else:
+            if Sport.objects.filter(name=normalized_name, workspace=workspace, global_sport=False).exists():
+                raise serializers.ValidationError("A sport with this name already exists in this workspace.")
+
+        data['name'] = normalized_name
+        return data
+    
+    
+    # def create(self, validated_data):
+    #     validated_data['name'] = Sport().normalize_name(validated_data['name'])
+    #     return super().create(validated_data)
     
 class TeamSerializer(serializers.ModelSerializer):
     coaches = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.filter(user_type='coach'), many=True)
