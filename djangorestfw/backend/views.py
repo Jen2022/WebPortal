@@ -14,6 +14,7 @@ from .models import Team
 from .models import TeamCategory
 from .models import Sport
 from .models import Workspace
+from .models import SessionsImpactsOverview, SessionImpacts
 
 from .serializers import CustomUserSerializer
 from .serializers import SportSerializer
@@ -21,9 +22,12 @@ from .serializers import ParentPlayerSerializer
 from .serializers import TeamSerializer
 from .serializers import TeamCategorySerializer
 from .serializers import WorkspaceSerializer
+from .serializers import SessionDataSerializer
+from rest_framework.parsers import MultiPartParser, FormParser
 
+from datetime import datetime
+import json
 from .permissions import IsInWorkspace
-
 
 class CustomUserViewSet(viewsets.ModelViewSet):
     queryset = CustomUser.objects.all()
@@ -108,3 +112,64 @@ class WorkspaceViewSet(viewsets.ModelViewSet):
         if self.request.user.is_superuser:
             return Workspace.objects.all()
         return Workspace.objects.filter(users=self.request.user)
+
+class SessionDataViewSet(viewsets.ViewSet):
+    parser_classes = [MultiPartParser, FormParser]
+
+    @action(detail=False, methods=['post'])
+    def upload(self, request):
+        serializer = SessionDataSerializer(data=request.data, many=True)
+        if serializer.is_valid():
+            self.parse_and_save_session_data(serializer.validated_data)
+            return Response({"message": "Session data saved successfully"}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'], url_path='upload-file')
+    def upload_file(self, request):
+        if 'file' not in request.FILES:
+            return Response({"error": "No file provided"}, status=status.HTTP_400_BAD_REQUEST)
+        file_obj = request.FILES['file']
+        try:
+            data = json.load(file_obj)
+        except json.JSONDecodeError:
+            return Response({"error": "Invalid JSON file"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer = SessionDataSerializer(data=data, many=True)
+        if serializer.is_valid():
+            self.parse_and_save_session_data(serializer.validated_data)
+            return Response({"message": "Session data saved successfully"}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def parse_and_save_session_data(self, session_data):
+        for session in session_data:
+            player = CustomUser.objects.get(id=session['player_id'])
+            date = datetime.now().date()
+
+            max_lin_impact = session['max_impact_lin']
+            max_rot_impact = session['max_impact_rot']
+            
+            total_lin_impact = sum([reading['linear_impact'] for reading in session['all_readings']])
+            total_rot_impact = sum([reading['rotational_impact'] for reading in session['all_readings']])
+            count_readings = len(session['all_readings'])
+
+            avg_lin_impact = total_lin_impact / count_readings if count_readings > 0 else 0
+            avg_rot_impact = total_rot_impact / count_readings if count_readings > 0 else 0
+
+            session_overview = SessionsImpactsOverview.objects.create(
+                user=player,
+                date=date,
+                max_lin_impact=max_lin_impact,
+                max_rot_impact=max_rot_impact,
+                avg_lin_impact=avg_lin_impact,
+                avg_rot_impact=avg_rot_impact,
+                cumulative_lin_impact=total_lin_impact,
+                cumulative_rot_impact=total_rot_impact,
+            )
+
+            for reading in session['all_readings']:
+                SessionImpacts.objects.create(
+                    session=session_overview,
+                    time=datetime.fromtimestamp(reading['time']),
+                    linear_impact=reading['linear_impact'],
+                    rotational_impact=reading['rotational_impact']
+                )

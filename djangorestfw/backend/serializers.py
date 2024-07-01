@@ -142,3 +142,15 @@ class TeamSerializer(serializers.ModelSerializer):
         if players is not None:
             instance.players.set(players)
         return instance
+
+class ImpactReadingSerializer(serializers.Serializer):
+    time = serializers.IntegerField()
+    linear_impact = serializers.IntegerField()
+    rotational_impact = serializers.IntegerField()
+
+class SessionDataSerializer(serializers.Serializer):
+    player_id = serializers.IntegerField()
+    time = serializers.CharField()
+    max_impact_lin = serializers.FloatField()
+    max_impact_rot = serializers.FloatField()
+    all_readings = ImpactReadingSerializer(many=True)

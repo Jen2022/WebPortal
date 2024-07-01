@@ -92,3 +92,32 @@ class Team(models.Model):
 
     def __str__(self):
         return self.team_name
+    
+class SessionsImpactsOverview(models.Model):
+    session_id = models.BigAutoField(primary_key=True)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    date = models.DateField()
+    max_lin_impact = models.BigIntegerField()
+    max_rot_impact = models.BigIntegerField()
+    avg_lin_impact = models.BigIntegerField()
+    avg_rot_impact = models.BigIntegerField()
+    cumulative_lin_impact = models.BigIntegerField()
+    cumulative_rot_impact = models.BigIntegerField()
+    note = models.ForeignKey('Notes', on_delete=models.SET_NULL, null=True, blank=True)
+
+    def __str__(self):
+        return f"Session {self.session_id} for User {self.user_id}"
+
+class SessionImpacts(models.Model):
+    impact_id = models.BigAutoField(primary_key=True)
+    session = models.ForeignKey(SessionsImpactsOverview, on_delete=models.CASCADE, related_name='impacts')
+    time = models.DateTimeField()
+    linear_impact = models.BigIntegerField()
+    rotational_impact = models.BigIntegerField()
+
+class Notes(models.Model):
+    note_id = models.BigAutoField(primary_key=True)
+    note = models.TextField()
+
+    def __str__(self):
+        return self.note[:50] + ('...' if len(self.note) > 50 else '')

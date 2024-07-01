@@ -244,8 +244,7 @@ class SportViewSetTestCase(APITestCase):
         response = self.client.delete(reverse('sport-detail', kwargs={'pk': self.sport.pk}))
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(Sport.objects.count(), 7)
-
-    
+  
 class TeamViewSetTestCase(APITestCase):
     
     def setUp(self):

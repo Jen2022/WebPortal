@@ -1,0 +1,20 @@
+[
+    {
+        "player_id": 13,
+        "time": "37.12",
+        "max_impact_lin": 100000,
+        "max_impact_rot": 100000,
+        "all_readings": [
+            {
+                "time": 1,
+                "linear_impact": 500,
+                "rotational_impact": 500
+            },
+            {
+                "time": 2,
+                "linear_impact": 600,
+                "rotational_impact": 600
+            }
+        ]
+    }
+]
