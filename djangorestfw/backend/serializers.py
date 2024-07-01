@@ -6,6 +6,7 @@ from .models import TeamCategory
 from .models import Sport
 from .models import Team
 from .models import Workspace
+from .models import SessionsImpactsOverview, SessionImpact
 from django.contrib.auth.hashers import make_password
 
 class WorkspaceSerializer(serializers.ModelSerializer):
@@ -148,9 +149,23 @@ class ImpactReadingSerializer(serializers.Serializer):
     linear_impact = serializers.IntegerField()
     rotational_impact = serializers.IntegerField()
 
+class UpdateNoteSerializer(serializers.Serializer):
+    note = serializers.CharField()
+
 class SessionDataSerializer(serializers.Serializer):
     player_id = serializers.IntegerField()
     time = serializers.CharField()
     max_impact_lin = serializers.FloatField()
     max_impact_rot = serializers.FloatField()
     all_readings = ImpactReadingSerializer(many=True)
+    note = serializers.CharField(allow_blank=True, required=False)
+
+class SessionsImpactsOverviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SessionsImpactsOverview
+        fields = '__all__'
+        
+class PlayerSessionsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SessionsImpactsOverview
+        fields = '__all__'

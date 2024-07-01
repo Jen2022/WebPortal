@@ -108,7 +108,7 @@ class SessionsImpactsOverview(models.Model):
     def __str__(self):
         return f"Session {self.session_id} for User {self.user_id}"
 
-class SessionImpacts(models.Model):
+class SessionImpact(models.Model):
     impact_id = models.BigAutoField(primary_key=True)
     session = models.ForeignKey(SessionsImpactsOverview, on_delete=models.CASCADE, related_name='impacts')
     time = models.DateTimeField()
@@ -121,3 +121,4 @@ class Notes(models.Model):
 
     def __str__(self):
         return self.note[:50] + ('...' if len(self.note) > 50 else '')
+    
