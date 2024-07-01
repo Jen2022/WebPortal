@@ -77,11 +77,12 @@ class SportSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError("A sport with this name already exists.")
         else:
             if Sport.objects.filter(name=normalized_name, workspace=workspace, global_sport=False).exists():
-                raise serializers.ValidationError("A sport with this name already exists in this workspace.")
+                raise serializers.ValidationError({
+                    'non_field_errors': ['A sport with a similar name already exists in this workspace.']
+                })
 
         data['name'] = normalized_name
         return data
-    
     
     # def create(self, validated_data):
     #     validated_data['name'] = Sport().normalize_name(validated_data['name'])

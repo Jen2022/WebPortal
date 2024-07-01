@@ -1,5 +1,5 @@
 # backend/views.py
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from .permissions import IsAdminUser
 from rest_framework import viewsets
@@ -64,14 +64,33 @@ class SportViewSet(viewsets.ModelViewSet):
         global_sports = Sport.objects.filter(global_sport=True)
         workspace_sports = Sport.objects.filter(workspace=self.request.user.workspace, global_sport=False)
         return global_sports.union(workspace_sports)
-
+    
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter_kwargs = {self.lookup_field: self.kwargs[self.lookup_field]}
+        try:
+            # Search in the unioned queryset
+            obj = next(item for item in queryset if getattr(item, self.lookup_field) == filter_kwargs[self.lookup_field])
+        except StopIteration:
+            # If not found, raise a 404 error
+            from django.shortcuts import get_object_or_404
+            obj = get_object_or_404(queryset.model, **filter_kwargs)
+        
+        # Perform the standard permission check.
+        self.check_object_permissions(self.request, obj)
+        return obj
     def create(self, request, *args, **kwargs):
-        if 'global_sport' not in request.data:
-            request.data['global_sport'] = False
-        if not request.data['global_sport']:
-            if 'workspace' not in request.data:
-                request.data['workspace'] = self.request.user.workspace.id
-        return super().create(request, *args, **kwargs)
+        # Copy request data to a mutable dict
+        data = request.data.copy()
+        data['global_sport'] = False
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def perform_create(self, serializer):
+        serializer.save()
     
 class TeamViewSet(viewsets.ModelViewSet):
     queryset = Team.objects.all()
