@@ -93,7 +93,7 @@ class Team(models.Model):
     def __str__(self):
         return self.team_name
     
-class SessionsImpactsOverview(models.Model):
+class SessionImpactsOverview(models.Model):
     session_id = models.BigAutoField(primary_key=True)
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     date = models.DateField()
@@ -110,7 +110,7 @@ class SessionsImpactsOverview(models.Model):
 
 class SessionImpact(models.Model):
     impact_id = models.BigAutoField(primary_key=True)
-    session = models.ForeignKey(SessionsImpactsOverview, on_delete=models.CASCADE, related_name='impacts')
+    session = models.ForeignKey(SessionImpactsOverview, on_delete=models.CASCADE, related_name='impacts')
     time = models.DateTimeField()
     linear_impact = models.BigIntegerField()
     rotational_impact = models.BigIntegerField()

@@ -6,7 +6,7 @@ from .models import TeamCategory
 from .models import Sport
 from .models import Team
 from .models import Workspace
-from .models import SessionsImpactsOverview, SessionImpact
+from .models import SessionImpactsOverview, SessionImpact
 from django.contrib.auth.hashers import make_password
 
 class WorkspaceSerializer(serializers.ModelSerializer):
@@ -144,6 +144,12 @@ class TeamSerializer(serializers.ModelSerializer):
             instance.players.set(players)
         return instance
 
+class SessionImpactsOverviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SessionImpactsOverview
+        fields = '__all__'
+
+#reads mini impacts
 class ImpactReadingSerializer(serializers.Serializer):
     time = serializers.IntegerField()
     linear_impact = serializers.IntegerField()
@@ -152,6 +158,7 @@ class ImpactReadingSerializer(serializers.Serializer):
 class UpdateNoteSerializer(serializers.Serializer):
     note = serializers.CharField()
 
+#reads overall impact of entire session
 class SessionDataSerializer(serializers.Serializer):
     player_id = serializers.IntegerField()
     time = serializers.CharField()
@@ -160,12 +167,3 @@ class SessionDataSerializer(serializers.Serializer):
     all_readings = ImpactReadingSerializer(many=True)
     note = serializers.CharField(allow_blank=True, required=False)
 
-class SessionsImpactsOverviewSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SessionsImpactsOverview
-        fields = '__all__'
-        
-class PlayerSessionsSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SessionsImpactsOverview
-        fields = '__all__'

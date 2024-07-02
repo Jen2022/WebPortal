@@ -2,7 +2,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import CustomUser
-from .models import Sport, Team, TeamCategory, Workspace, ParentPlayer, SessionImpact,SessionsImpactsOverview
+from .models import Sport, Team, TeamCategory, Workspace, ParentPlayer, SessionImpact,SessionImpactsOverview
 from .forms import CustomUserCreationForm, CustomUserChangeForm
 
 class CustomUserAdmin(UserAdmin):
@@ -28,5 +28,5 @@ admin.site.register(Team)
 admin.site.register(TeamCategory)
 admin.site.register(Workspace)
 admin.site.register(ParentPlayer)
-admin.site.register(SessionsImpactsOverview)
+admin.site.register(SessionImpactsOverview)
 admin.site.register(SessionImpact)

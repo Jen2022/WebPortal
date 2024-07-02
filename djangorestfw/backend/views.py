@@ -14,7 +14,7 @@ from .models import Team
 from .models import TeamCategory
 from .models import Sport
 from .models import Workspace
-from .models import SessionsImpactsOverview, SessionImpact, Notes
+from .models import SessionImpactsOverview, SessionImpact, Notes
 
 from .serializers import CustomUserSerializer
 from .serializers import SportSerializer
@@ -22,7 +22,7 @@ from .serializers import ParentPlayerSerializer
 from .serializers import TeamSerializer
 from .serializers import TeamCategorySerializer
 from .serializers import WorkspaceSerializer
-from .serializers import SessionDataSerializer, PlayerSessionsSerializer, UpdateNoteSerializer, SessionsImpactsOverviewSerializer
+from .serializers import SessionDataSerializer, UpdateNoteSerializer, SessionImpactsOverviewSerializer
 from rest_framework.parsers import MultiPartParser, FormParser
 
 from django.shortcuts import get_object_or_404
@@ -120,8 +120,8 @@ class SessionDataViewSet(viewsets.ViewSet):
     @action(detail=True, methods=['get'], url_path='sessions-overview')
     def get_player_sessions(self, request, pk=None):
         player = get_object_or_404(CustomUser, pk=pk)
-        sessions = SessionsImpactsOverview.objects.filter(user=player)
-        serializer = PlayerSessionsSerializer(sessions, many=True)
+        sessions = SessionImpactOverview.objects.filter(user=player)
+        serializer = SessionImpactOverviewSerializer(sessions, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     @action(detail=True, methods=['get'], url_path='session-overview')
@@ -129,8 +129,8 @@ class SessionDataViewSet(viewsets.ViewSet):
         """
         Retrieve a specific session overview.
         """
-        session = get_object_or_404(SessionsImpactsOverview, pk=pk)
-        serializer = SessionsImpactsOverviewSerializer(session)
+        session = get_object_or_404(SessionImpactsOverview, pk=pk)
+        serializer = SessionImpactsOverviewSerializer(session)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     @action(detail=False, methods=['post'])
@@ -172,7 +172,7 @@ class SessionDataViewSet(viewsets.ViewSet):
             avg_lin_impact = total_lin_impact / count_readings if count_readings > 0 else 0
             avg_rot_impact = total_rot_impact / count_readings if count_readings > 0 else 0
 
-            session_overview = SessionsImpactsOverview.objects.create(
+            session_overview = SessionImpactsOverview.objects.create(
                 user=player,
                 date=date,
                 max_lin_impact=max_lin_impact,
@@ -193,7 +193,7 @@ class SessionDataViewSet(viewsets.ViewSet):
 
     @action(detail=True, methods=['post'], url_path='add-note')
     def add_note_to_session(self, request, pk=None):
-        session = get_object_or_404(SessionsImpactsOverview, pk=pk)
+        session = get_object_or_404(SessionImpactsOverview, pk=pk)
         serializer = UpdateNoteSerializer(data=request.data)
         if serializer.is_valid():
             note_text = serializer.validated_data['note']
