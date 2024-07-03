@@ -22,10 +22,12 @@ from .serializers import ParentPlayerSerializer
 from .serializers import TeamSerializer
 from .serializers import TeamCategorySerializer
 from .serializers import WorkspaceSerializer
-from .serializers import SessionDataSerializer, UpdateNoteSerializer, SessionImpactsOverviewSerializer
+from .serializers import SessionDataSerializer, UpdateNoteSerializer, SessionImpactsOverviewSerializer, SessionImpactSerializer
 from rest_framework.parsers import MultiPartParser, FormParser
 
 from django.shortcuts import get_object_or_404
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 from datetime import datetime
 import json
 from .permissions import IsInWorkspace
@@ -117,6 +119,27 @@ class WorkspaceViewSet(viewsets.ModelViewSet):
 class SessionDataViewSet(viewsets.ViewSet):
     parser_classes = [MultiPartParser, FormParser]
     
+    @action(detail=False, methods=['post'], url_path='upload-file')
+    def upload_file(self, request):
+        if 'file' not in request.FILES:
+            return Response({"error": "No file provided"}, status=status.HTTP_400_BAD_REQUEST)
+        file_obj = request.FILES['file']
+        try:
+            data = json.load(file_obj)
+        except json.JSONDecodeError:
+            return Response({"error": "Invalid JSON file"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer = SessionDataSerializer(data=data, many=True)
+        if serializer.is_valid():
+            self.parse_and_save_session_data(serializer.validated_data)
+            return Response({"message": "Session data saved successfully"}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+    @swagger_auto_schema(
+        responses={200: 'Session overview for the given session ID'},
+        operation_description="Get session overview by session ID."
+    )
     @action(detail=True, methods=['get'], url_path='sessions-overview')
     def get_player_sessions(self, request, pk=None):
         player = get_object_or_404(CustomUser, pk=pk)
@@ -133,29 +156,27 @@ class SessionDataViewSet(viewsets.ViewSet):
         serializer = SessionImpactsOverviewSerializer(session)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
-    @action(detail=False, methods=['post'])
-    def upload(self, request):
-        serializer = SessionDataSerializer(data=request.data, many=True)
-        if serializer.is_valid():
-            self.parse_and_save_session_data(serializer.validated_data)
-            return Response({"message": "Session data saved successfully"}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    @action(detail=False, methods=['post'], url_path='upload-file')
-    def upload_file(self, request):
-        if 'file' not in request.FILES:
-            return Response({"error": "No file provided"}, status=status.HTTP_400_BAD_REQUEST)
-        file_obj = request.FILES['file']
+    @action(detail=True, methods=['get'], url_path='impacts')
+    def get_session_impacts(self, request, pk=None):
         try:
-            data = json.load(file_obj)
-        except json.JSONDecodeError:
-            return Response({"error": "Invalid JSON file"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        serializer = SessionDataSerializer(data=data, many=True)
-        if serializer.is_valid():
-            self.parse_and_save_session_data(serializer.validated_data)
-            return Response({"message": "Session data saved successfully"}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            session = SessionImpactsOverview.objects.get(pk=pk)
+        except SessionImpactsOverview.DoesNotExist:
+            return Response({"error": "Session not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        impacts = SessionImpact.objects.filter(session=session)
+        serializer = SessionImpactSerializer(impacts, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get'], url_path='impact-details')
+    def get_impact_details(self, request, pk=None):
+        try:
+            impact = SessionImpact.objects.get(pk=pk)
+        except SessionImpact.DoesNotExist:
+            return Response({"error": "Impact not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = SessionImpactSerializer(impact)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
 
     def parse_and_save_session_data(self, session_data):
         for session in session_data:

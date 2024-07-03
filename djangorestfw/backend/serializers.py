@@ -167,4 +167,7 @@ class SessionDataSerializer(serializers.Serializer):
     all_readings = ImpactReadingSerializer(many=True)
     note = serializers.CharField(allow_blank=True, required=False)
 
-
+class SessionImpactSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SessionImpact
+        fields = ['impact_id', 'session', 'time', 'linear_impact', 'rotational_impact']
