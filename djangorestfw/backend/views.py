@@ -120,8 +120,8 @@ class SessionDataViewSet(viewsets.ViewSet):
     @action(detail=True, methods=['get'], url_path='sessions-overview')
     def get_player_sessions(self, request, pk=None):
         player = get_object_or_404(CustomUser, pk=pk)
-        sessions = SessionImpactOverview.objects.filter(user=player)
-        serializer = SessionImpactOverviewSerializer(sessions, many=True)
+        sessions = SessionImpactsOverview.objects.filter(user=player)
+        serializer = SessionImpactsOverviewSerializer(sessions, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     @action(detail=True, methods=['get'], url_path='session-overview')

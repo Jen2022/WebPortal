@@ -149,8 +149,8 @@ class SessionImpactsOverviewSerializer(serializers.ModelSerializer):
         model = SessionImpactsOverview
         fields = '__all__'
 
-#reads mini impacts
 class ImpactReadingSerializer(serializers.Serializer):
+    #reads mini impacts
     time = serializers.IntegerField()
     linear_impact = serializers.IntegerField()
     rotational_impact = serializers.IntegerField()
@@ -158,12 +158,13 @@ class ImpactReadingSerializer(serializers.Serializer):
 class UpdateNoteSerializer(serializers.Serializer):
     note = serializers.CharField()
 
-#reads overall impact of entire session
 class SessionDataSerializer(serializers.Serializer):
+    #reads overall impact of entire session
     player_id = serializers.IntegerField()
     time = serializers.CharField()
     max_impact_lin = serializers.FloatField()
     max_impact_rot = serializers.FloatField()
     all_readings = ImpactReadingSerializer(many=True)
     note = serializers.CharField(allow_blank=True, required=False)
+
 
