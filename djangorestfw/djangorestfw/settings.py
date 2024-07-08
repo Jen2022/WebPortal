@@ -78,9 +78,21 @@ WSGI_APPLICATION = "djangorestfw.wsgi.application"
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+    #local db
+    # "default": {
+    #     "ENGINE": "django.db.backends.sqlite3",
+    #     "NAME": BASE_DIR / "db.sqlite3",
+    # }
+
+    # postgres db
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'SitPortal',
+        'USER': 'awsuser',
+        'PASSWORD': 'sit27060805',
+        # 'HOST': 'localhost',
+        'HOST': 'sit-db.cbfficfofomq.eu-west-1.rds.amazonaws.com',  # Set to 'localhost' if running locally
+        'PORT': '5432',  # Set to '' for default
     }
 }
 
